@@ -7,8 +7,12 @@
 using namespace std;
 
 //Declartion of functions:
-void dealer(int old_total, int old_aceCount, int cards, double probability, int cardDeck[], double dealer_Probability[]);
+double player_Hit(int player_TotalPoints, int pace, int cards, int cardDeck[]);
 double player_Stands(int player_Total, int player_PaceTimer, int player_Cards, int cardDeck[]);
+double max_OfTwoNum(double x, double y);
+double player_DoubleHit(int player_Total, int pace, int cardDeck[]);
+double player_Splits(int player_Total, int pace, int cardDeck[]);
+void dealer(int old_total, int old_aceCount, int cards, double probability, int cardDeck[], double dealer_Probability[]);
 
 
 int numOfSuits = 6;
@@ -26,6 +30,7 @@ int main()
 
           cerr << "1. Dealer probability chances\n";
           cerr << "2. Player Hand\n";
+          cerr << "3. Whole gamee\n";
           cin >> ch;
 
           if (ch == 1)
@@ -55,7 +60,69 @@ int main()
               cardDeck[faceUp_Card]--;
               cardDeck[0] -= 3;
               ev_Stand = player_Stands(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
+              //Shows the user what happens when they hit:
+              ev_Hit = player_Hit(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
+              //Call to player douybling hit:
+              ev_Double = player_DoubleHit(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), cardDeck);
+             //Player must have a pair to split:
+              if (pc1 == pc2) {
+                  ev_Split = player_Splits(pc1, (pc1 == 1 ? 1 : 0), cardDeck);
+              }
+              else {
+                  ev_Split = -1.0;
+              }
               cerr << "EV stand =\t" << ev_Stand << "\n";
+              cerr << "EV hit =\t" << ev_Hit << "\n";
+              cerr << "EV Double =\t" << ev_Double << "\n";
+              cerr << "EV split = \t" << ev_Split << "\n";
+          }
+          //Analyze the whole game:
+          else if (ch == 3) {
+              double prob = 1.0;
+              double total_Prob = 0.0;
+              double total_Value = 0.0;
+
+              for (pc1 = 1; pc1 <= 10; pc1++) {
+                  prob *= (double)cardDeck[pc1] / (double)cardDeck[0];
+                  cardDeck[pc1]--;
+                  cardDeck[0]--;
+
+                  for (pc2 = pc1; pc2 <= 10; pc2++) {
+                      prob *= (pc1 == pc2 ? 1 : 2) * (double)cardDeck[pc2] / (double)cardDeck[0];
+                      cardDeck[pc2]--;
+                      cardDeck[0]--;
+
+                      for (faceUp_Card = 1; faceUp_Card <= 10; faceUp_Card++) {
+                          prob *= (double)cardDeck[faceUp_Card] / (double)cardDeck[0];
+                          total_Prob += prob;
+                          cardDeck[faceUp_Card]--;
+                          cardDeck[0]--;
+                          ev_Stand = player_Stands(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
+                          //Shows the user what happens when they hit:
+                          ev_Hit = player_Hit(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
+                          //Call to player douybling hit:
+                          ev_Double = player_DoubleHit(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), cardDeck);
+                          //Player must have a pair to split:
+                          if (pc1 == pc2) {
+                              ev_Split = player_Splits(pc1, (pc1 == 1 ? 1 : 0), cardDeck);
+                          }
+                          else {
+                            ev_Split = -1.0;
+                            printf("%i, %i, %i,%f, %f, %f, %f\n", pc1, pc2, faceUp_Card, ev_Stand, ev_Hit, ev_Double, ev_Split);
+
+                          }
+                          cardDeck[0]++;
+                          cardDeck[faceUp_Card]++;
+                          prob /= (double)cardDeck[faceUp_Card] / (double)cardDeck[0];
+                     }
+                          cardDeck[0]++;
+                          cardDeck[pc2]++;
+                          prob /= (pc1 == pc2 ? 1 : 2) * (double)cardDeck[pc2] / (double)cardDeck[0];
+                  }
+                          cardDeck[0]++;
+                          cardDeck[pc1]++;
+                          prob /= (double)cardDeck[pc1] / (double)cardDeck[0];
+              }
           }
      }
 
@@ -113,6 +180,104 @@ static double player_Stands(int player_Total, int player_PaceTimer, int player_C
      return player_Stands;
 }
 
+//Player Function for when player hits Calculated thexpected value for player:
+static double player_Hit(int player_TotalPoints, int pace, int cards, int cardDeck[])
+ {
+      //Numbers of cards to determine if player has Black Jack
+       int next_Card;
+       double prob = 0.0, ev_Stand, ev_Hit, ev_Hit_Again;
+       ev_Hit = 0.0;
+
+     for (next_Card = 1; next_Card <= 10; next_Card++) {
+       //Player probability of getting any given rank card:
+         prob = (double)cardDeck[next_Card] / (double)cardDeck[0];
+         cardDeck[next_Card]--;
+         cardDeck[0]--;
+        //Stand of hit decision:
+         ev_Stand = player_Stands(player_TotalPoints + next_Card, pace + (next_Card == 1 ? 1 : 0), cards + 1, cardDeck);
+        //Player Hits again calling the player Hit function recussively to calculate:
+         if (player_TotalPoints + next_Card < 17) {
+          ev_Hit_Again = player_Hit(player_TotalPoints + next_Card, pace + (next_Card == 1 ? 1 : 0), cards + 1, cardDeck);
+         }
+         else {
+        //Makes the player stand if player has 17 and or more:
+           ev_Hit_Again = -1;
+           ev_Hit += prob * max_OfTwoNum(ev_Stand, ev_Hit_Again);
+           cardDeck[next_Card]++;
+           cardDeck[0]++;
+         }
+     }
+     return ev_Hit;
+ }
+//Function for when player double downs on bet:
+static double player_DoubleHit(int player_Total, int pace, int cardDeck[]) 
+{
+    int next_Card; 
+    double prob, ev_Double;
+    ev_Double = 0.0;
+    
+    if (player_Total > 11) {
+        ev_Double = -1;
+    }
+    else {
+    //Loop through what the next card is:
+      for (next_Card = 1; next_Card <= 10; next_Card++) {
+        //Player probability of getting any given rank card:
+        prob = (double)cardDeck[next_Card] / (double)cardDeck[0];
+        cardDeck[next_Card]--;
+        cardDeck[0]--;
+        //Stand of hit decision doubls cant take any more cards:
+        ev_Double += prob * player_Stands(player_Total + next_Card, pace + (next_Card == 1 ? 1 : 0),3, cardDeck);
+            cardDeck[next_Card]++;
+            cardDeck[0]++;
+      }
+    }
+    //Player is betting twice as mouch:
+    return 2 * ev_Double;
+}
+
+//Test-Case what happens after player splits:
+static double player_Splits(int player_Total, int pace, int cardDeck[]) 
+{
+    int next_Card;
+    double prob, ev_Split, ev_Stand, ev_Hit;
+    ev_Split = 0.0;
+
+  for (next_Card = 1; next_Card <= 10; next_Card++) 
+    {
+    //STEPS:
+    //First find the probability of the card and remove from deck.
+    //Player has choice to stand or hit.
+      prob = (double)cardDeck[next_Card] / (double)cardDeck[0];
+      cardDeck[next_Card]--;
+      cardDeck[0]--;
+    //Expect value of standing is what ever i get from treat ace and a 10 as 21.
+      ev_Stand = player_Stands(player_Total + next_Card, pace + (next_Card == 1 ? 1 : 0), 3, cardDeck);
+    //Send 2 cards for the hit function.
+      if (player_Total == 1) {
+          ev_Hit = -1.0;
+      }
+      else {
+      ev_Hit = player_Stands(player_Total + next_Card, pace + (next_Card == 1 ? 1 : 0), 2, cardDeck);
+      ev_Split += prob * max_OfTwoNum(ev_Stand, ev_Hit);
+      cardDeck[next_Card]++;
+      cardDeck[0]++;
+      }
+    }
+  //After running through all player possiblities of 10 possible cards because player is doubling bet multiple by 2.
+   return 2 * ev_Split;
+ }
+
+//Created Function that returns the greate of the 2 values:
+static double max_OfTwoNum(double x, double y)
+ {
+    if (x > y) {
+        return x;
+    }
+    else {
+        return y;
+    }
+ }
 
 /*
   Dealer Probability 
