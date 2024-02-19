@@ -81,6 +81,8 @@ int main()
               double prob = 1.0;
               double total_Prob = 0.0;
               double total_Value = 0.0;
+              double max_Ev = 0.0;
+              int basic_Strategy[11][11][11]{};
 
               for (pc1 = 1; pc1 <= 10; pc1++) {
                   prob *= (double)cardDeck[pc1] / (double)cardDeck[0];
@@ -95,6 +97,7 @@ int main()
                       for (faceUp_Card = 1; faceUp_Card <= 10; faceUp_Card++) {
                           prob *= (double)cardDeck[faceUp_Card] / (double)cardDeck[0];
                           total_Prob += prob;
+
                           cardDeck[faceUp_Card]--;
                           cardDeck[0]--;
                           ev_Stand = player_Stands(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
@@ -108,6 +111,20 @@ int main()
                           }
                           else {
                             ev_Split = -1.0;
+                            max_Ev = max_OfTwoNum(max_OfTwoNum(ev_Hit, ev_Stand), max_OfTwoNum(ev_Double, ev_Split));
+                            if (max_Ev == ev_Stand) {
+                                basic_Strategy[pc1][pc2][faceUp_Card] = 1;
+                            }
+                            else if (max_Ev == ev_Hit) {
+                                basic_Strategy[pc1][pc2][faceUp_Card] = 2;
+                            }
+                            else if (max_Ev == ev_Double) {
+                                basic_Strategy[pc1][pc2][faceUp_Card] = 3;
+                            }
+                            else {
+                                basic_Strategy[pc1][pc2][faceUp_Card] = 4;
+                            }
+                            total_Value += prob * max_Ev;
                             printf("%i, %i, %i,%f, %f, %f, %f\n", pc1, pc2, faceUp_Card, ev_Stand, ev_Hit, ev_Double, ev_Split);
 
                           }
@@ -123,6 +140,35 @@ int main()
                           cardDeck[pc1]++;
                           prob /= (double)cardDeck[pc1] / (double)cardDeck[0];
               }
+              printf("Total probability = \t%f\n", total_Prob);
+              printf("Game Expected Value = \t%f\n", total_Value);
+              printf("Hard Totals\n");
+              char codes[] = "XSHDP";
+              for (pc1 = 2; pc1 <= 9; pc1++) {
+                  for (pc2 = pc1 + 1; pc2 <= 10; pc2++) {
+                      printf("%i+%i\t", pc1, pc2);
+                      for (faceUp_Card = 2; faceUp_Card <= 10; faceUp_Card++) {
+                          printf("%c", codes[basic_Strategy[pc1][pc2][faceUp_Card]]);
+                          printf("%c\n", codes[basic_Strategy[pc1][pc2][1]]);
+                      }
+                  }
+                  printf("Soft Totals\n");
+                  for (pc2 = 2; pc2 <= 10; pc2++) {
+                          printf("%i+%i\t", 1, pc2);
+                      for (faceUp_Card = 2; faceUp_Card <= 10; faceUp_Card++) {
+                          printf("%c,", codes[basic_Strategy[1][pc2][faceUp_Card]]);
+                          printf("%c,", codes[basic_Strategy[1][pc2][1]]);
+                      }
+                  }
+                  printf("Pairs\n");
+                  for (pc2 = 1; pc2 <= 10; pc2++) {
+                          printf("%i+%i\t", pc2, pc2); 
+                      for (faceUp_Card = 2; faceUp_Card <= 10; faceUp_Card++) {
+                          printf("%c,", codes[basic_Strategy[pc2][pc2][faceUp_Card]]);
+                          printf("%c\n", codes[basic_Strategy[pc2][pc2][1]]);
+                      }
+                  }
+               }
           }
      }
 
@@ -168,7 +214,7 @@ static double player_Stands(int player_Total, int player_PaceTimer, int player_C
              player_Stands -= dealers_Probability[5]; 
            for (int i = 0; i <= 4; i++) {
                if (player_Total > i + 17) {
-                   player_Stands + dealers_Probability[i];
+                   player_Stands += dealers_Probability[i];
                }
                 else if (player_Total < i + 17) {
                    player_Stands -= dealers_Probability[i];
