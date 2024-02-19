@@ -6,34 +6,58 @@
 #include <iostream>
 using namespace std;
 
+//Declartion of functions:
 void dealer(int old_total, int old_aceCount, int cards, double probability, int cardDeck[], double dealer_Probability[]);
+double player_Stands(int player_Total, int player_PaceTimer, int player_Cards, int cardDeck[]);
+
 
 int numOfSuits = 6;
 int faceUp_Card;
 
 int main()
 {
-    int i = 0, j = 0, cardDeck[11]{};
+    int ch = 0, i = 0, j = 0, cardDeck[11]{}, pc1, pc2;
     //Represents the number of aces in deck.
-    double dealer_Probability[7]{};
+    double dealer_Probability[7]{}, ev_Stand = 0.0, ev_Hit = 0.0, ev_Double = 0.0, ev_Split = 0.0;
     for (i = 1; i <= 9; i++)
         cardDeck[i] = 4 * numOfSuits;
         cardDeck[10] = 16 * numOfSuits;
         cardDeck[0] = 52 * numOfSuits;
-        for (i = 0; i <= 10; i++){
-            cout << "Face Up Card = " << i << "\n";
-            cardDeck[i]--;
-            cardDeck[0]--;
-            dealer(i, ( i == 1 ? 1:0), 1, 1.0, cardDeck, dealer_Probability);
 
-        for (j = 0; j <= 6; j++) 
-            cerr << j << "\t" << dealer_Probability[j] << "\n";
-          //Adds back cards after down passing cards dealer fashion:
-           cardDeck[i]++;
-           cardDeck[0]++;
-        }
-    /*std::cout << "Hello World!\n";*/
-}
+          cerr << "1. Dealer probability chances\n";
+          cerr << "2. Player Hand\n";
+          cin >> ch;
+
+          if (ch == 1)
+          {
+              for (i = 0; i <= 10; i++) {
+                  cout << "Face Up Card = " << i << "\n";
+                  cardDeck[i]--;
+                  cardDeck[0]--;
+                  dealer(i, (i == 1 ? 1 : 0), 1, 1.0, cardDeck, dealer_Probability);
+
+                  for (j = 0; j <= 6; j++)
+                      cerr << j << "\t" << dealer_Probability[j] << "\n";
+                  //Adds back cards after down passing cards dealer fashion:
+                  cardDeck[i]++;
+                  cardDeck[0]++;
+              }
+          }
+          else if (ch == 2) {
+              cerr << "Player Card 1:";
+              cin >> pc1;
+              cerr << "Player Card 2: ";
+              cin >> pc2;
+              cerr << "Dealers up card: ";
+              cin >> faceUp_Card;
+              cardDeck[pc1]--;
+              cardDeck[pc2]--;
+              cardDeck[faceUp_Card]--;
+              cardDeck[0] -= 3;
+              ev_Stand = player_Stands(pc1 + pc2, (pc1 == 1 ? 1 : 0) + (pc2 == 1 ? 1 : 0), 2, cardDeck);
+              cerr << "EV stand =\t" << ev_Stand << "\n";
+          }
+     }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
@@ -50,8 +74,8 @@ int main()
 static double player_Stands(int player_Total, int player_PaceTimer, int player_Cards, int cardDeck[])
 {
    double player_Stands = 0.0, dealers_Probability[7]{};
-   //Test-Case when player hasd a Black Jack:
-     if ((player_Total == 1) && (player_PaceTimer == 1) && (player_Cards == 2)) {
+   //Test-Case when player has a Black Jack:
+     if ((player_Total == 11) && (player_PaceTimer == 1) && (player_Cards == 2)) {
         //Test-Case player has winning Black Jack cards!:6
          if ((faceUp_Card > 1) && (faceUp_Card < 10)) {
              return 1.5;
